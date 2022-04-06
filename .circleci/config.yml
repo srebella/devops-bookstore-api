@@ -10,3 +10,10 @@ workflows:
           args: '--dev'
           pkg-manager: pipenv
           test-tool: unittest 
+      - azure-acr/build-and-push-image:
+          login-server-name: devopsupskillregistryvhkxq.azurecr.io
+          registry-name: devopsupskillregistryvhkxq
+          repo: devops-bookstore-api
+          tag: '1.$CIRCLE_BUILD_NUM'
+          requires:
+            - "python/test"
