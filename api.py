@@ -1,11 +1,16 @@
 from flask import Flask
 from flask_restful import Resource, Api, reqparse, abort, marshal, fields
 from flask_cors import CORS
+from prometheus_flask_exporter import RESTfulPrometheusMetrics
 
 # Initialize Flask
 app = Flask(__name__)
 CORS(app)
 api = Api(app)
+
+metrics = RESTfulPrometheusMetrics(app, api)
+
+metrics.info('app_info', 'Application info', version='1.0', app_name='devops-bookstore-api')
 
 # A List of Dicts to store all of the books
 books = [{
@@ -26,12 +31,6 @@ books = [{
         "bookDescription": "The overwhelming majority of a software system's lifespan is spent in use, not in design or implementation. So, why does conventional wisdom insist that software engineers focus primarily on the design and development of large-scale computing systems?",
         "bookAuthors" : "Betsy Beyer, Chris Jones, Jennifer Petoff"
     },
-    {
-        "bookTitle": "ARGO CD Registration" ,
-        "bookImage": "https://itbook.store/img/books/9781491929124.png",
-        "bookDescription": "The overwhelming task of creating a server task",
-        "bookAuthors" : "Santiago Rebella"
-    },
 ]
 
 # Schema For the Book Request JSON
@@ -47,8 +46,9 @@ class BookList(Resource):
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
 
+    @metrics.summary('requests_by_status', 'Request latencies by status', labels={'status': lambda r: r.status_code})
     def get(self):
-        return{"books": [marshal(book, bookFields) for book in books]}
+        return{"books": [marshal(book, bookFields) for book in books]}, 200
 
 
 api.add_resource(BookList, "/books")
